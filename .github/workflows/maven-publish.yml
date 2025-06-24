@@ -29,11 +29,8 @@ jobs:
       - name: Auto Increment Version
         id: version
         run: |
-          # 安装 XML 处理工具
-          sudo apt-get install -y xmlstarlet
-          
           # 从 pom.xml 获取当前版本
-          CURRENT_VERSION=$(xmlstarlet sel -N pom=http://maven.apache.org/POM/4.0.0 -t -v "/pom:project/pom:version" pom.xml)
+          CURRENT_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
           
           # 生成新版本号 (增加最后一位数字)
           MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
@@ -43,7 +40,7 @@ jobs:
           NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
           
           # 更新 pom.xml
-          xmlstarlet ed -L -N pom=http://maven.apache.org/POM/4.0.0 -u "/pom:project/pom:version" -v "$NEW_VERSION" pom.xml
+          mvn versions:set -DnewVersion=$NEW_VERSION -DgenerateBackupPoms=false
           
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "Updated version to $NEW_VERSION"
@@ -57,20 +54,8 @@ jobs:
 
       - name: Generate Gradle Usage Snippet
         run: |
-          echo "GRADLE_USAGE=repositories {
-              maven {
-                  name = 'GitHubPackages'
-                  url = 'https://maven.pkg.github.com/${{ github.repository }}'
-                  credentials {
-                      username = project.findProperty('gpr.user') ?: System.getenv('GPR_USER')
-                      password = project.findProperty('gpr.key') ?: System.getenv('GPR_API_KEY')
-                  }
-              }
-          }
-          
-          dependencies {
-              implementation 'com.fish:fish-common-api:${{ steps.version.outputs.new_version }}'
-          }" >> $GITHUB_ENV
+          # 使用单行格式避免语法问题
+          echo "GRADLE_USAGE=repositories { maven { name = 'GitHubPackages'; url = 'https://maven.pkg.github.com/${{ github.repository }}'; credentials { username = project.findProperty('gpr.user') ?: System.getenv('GPR_USER'); password = project.findProperty('gpr.key') ?: System.getenv('GPR_API_KEY'); } } } dependencies { implementation 'com.fish:fish-common-api:${{ steps.version.outputs.new_version }}' }" >> $GITHUB_ENV
 
       - name: Create Release
         if: ${{ github.event_name == 'release' }}
@@ -94,7 +79,20 @@ jobs:
             
             ### 🐘 Gradle
             ```gradle
-            ${{ env.GRADLE_USAGE }}
+            repositories {
+                maven {
+                    name = 'GitHubPackages'
+                    url = 'https://maven.pkg.github.com/${{ github.repository }}'
+                    credentials {
+                        username = project.findProperty('gpr.user') ?: System.getenv('GPR_USER')
+                        password = project.findProperty('gpr.key') ?: System.getenv('GPR_API_KEY')
+                    }
+                }
+            }
+            
+            dependencies {
+                implementation 'com.fish:fish-common-api:${{ steps.version.outputs.new_version }}'
+            }
             ```
             
             ### 🔑 Authentication
