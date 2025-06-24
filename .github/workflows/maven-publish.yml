@@ -26,6 +26,9 @@ jobs:
         cache: 'maven'
         server-id: github
         
+    - name: Install Maven
+      run: sudo apt-get install -y maven
+      
     - name: Read project version
       id: version
       run: |
@@ -36,27 +39,25 @@ jobs:
       run: mvn -B clean deploy -DskipTests
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_ACTOR: ${{ github.actor }}
         GITHUB_REPOSITORY: ${{ github.repository }}
         
     - name: Generate Gradle Usage Snippet
       run: |
-        echo "GRADLE_USAGE=$(cat <<EOF
-repositories {
-    maven {
-        name = 'GitHubPackages'
-        url = 'https://maven.pkg.github.com/${{ github.repository }}'
-        credentials {
-            username = project.findProperty('gpr.user') ?: System.getenv('GPR_USER')
-            password = project.findProperty('gpr.key') ?: System.getenv('GPR_API_KEY')
+        echo "GRADLE_USAGE=repositories {
+            maven {
+                name = 'GitHubPackages'
+                url = 'https://maven.pkg.github.com/${{ github.repository }}'
+                credentials {
+                    username = project.findProperty('gpr.user') ?: System.getenv('GPR_USER')
+                    password = project.findProperty('gpr.key') ?: System.getenv('GPR_API_KEY')
+                }
+            }
         }
-    }
-}
-
-dependencies {
-    implementation 'com.fish:fish-common-api:${{ steps.version.outputs.version }}'
-}
-EOF
-)" >> $GITHUB_ENV
+        
+        dependencies {
+            implementation 'com.fish:fish-common-api:${{ steps.version.outputs.version }}'
+        }" >> $GITHUB_ENV
         
     - name: Create Release
       if: ${{ github.event_name == 'release' }}
