@@ -30,7 +30,6 @@
         </repository>
     </distributionManagement>
 
-
     <build>
         <plugins>
             <!-- Maven编译器插件 -->
@@ -85,30 +84,30 @@
                 <version>${maven-deploy-plugin.version}</version>
             </plugin>
 
-            <!-- 动态注入GitHub认证凭据 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-settings-plugin</artifactId>
-                <version>3.0.0</version> <!-- 较稳定版本 -->
-                <executions>
-                    <execution>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <servers>
-                                <server>
-                                    <id>github</id>
-                                    <!-- 从环境变量读取用户名和Token -->
-                                    <username>${env.GITHUB_USERNAME}</username>
-                                    <password>${env.GITHUB_TOKEN}</password>
-                                </server>
-                            </servers>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+<!--            &lt;!&ndash; 动态注入GitHub认证凭据 &ndash;&gt;-->
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-settings-plugin</artifactId>-->
+<!--                <version>3.0.0</version> &lt;!&ndash; 较稳定版本 &ndash;&gt;-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <phase>initialize</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>copy</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <servers>-->
+<!--                                <server>-->
+<!--                                    <id>github</id>-->
+<!--                                    &lt;!&ndash; 从环境变量读取用户名和Token &ndash;&gt;-->
+<!--                                    <username>${env.GITHUB_USERNAME}</username>-->
+<!--                                    <password>${env.GITHUB_TOKEN}</password>-->
+<!--                                </server>-->
+<!--                            </servers>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 
