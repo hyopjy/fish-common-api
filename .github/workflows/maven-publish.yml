@@ -1,4 +1,4 @@
-name: Publish Fish Common API to GitHub Packages
+name: Publish and Release Fish Common API
 
 on:
   push:
@@ -8,11 +8,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-publish:
+  build-and-release:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+      actions: write
 
     steps:
       - name: Checkout repository
@@ -32,7 +33,7 @@ jobs:
           # 从 pom.xml 获取当前版本
           CURRENT_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
           
-          # 生成新版本号 (增加最后一位数字)
+          # 生成新版本号
           MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
           MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
           PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
@@ -45,24 +46,33 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "Updated version to $NEW_VERSION"
 
-      - name: Build and Publish
-        run: mvn -B clean deploy -DskipTests
+      - name: Build package
+        run: mvn -B clean package -DskipTests
+
+      - name: Archive release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: |
+            target/*.jar
+            target/*.pom
+
+      - name: Publish to GitHub Packages
+        run: mvn -B deploy -DskipTests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_REPOSITORY: ${{ github.repository }}
 
-      - name: Generate Gradle Usage Snippet
-        run: |
-          # 使用单行格式避免语法问题
-          echo "GRADLE_USAGE=repositories { maven { name = 'GitHubPackages'; url = 'https://maven.pkg.github.com/${{ github.repository }}'; credentials { username = project.findProperty('gpr.user') ?: System.getenv('GPR_USER'); password = project.findProperty('gpr.key') ?: System.getenv('GPR_API_KEY'); } } } dependencies { implementation 'com.fish:fish-common-api:${{ steps.version.outputs.new_version }}' }" >> $GITHUB_ENV
-
-      - name: Create Release
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v2
         if: ${{ github.event_name == 'release' }}
-        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ steps.version.outputs.new_version }}
-          name: Fish Common API v${{ steps.version.outputs.new_version }}
+          release_name: Fish Common API v${{ steps.version.outputs.new_version }}
           body: |
             ### 🐟 Fish Common API v${{ steps.version.outputs.new_version }}
             
@@ -101,3 +111,38 @@ jobs:
             gpr.user=<your-github-username>
             gpr.key=<your-github-token>
             ```
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v2
+        if: ${{ github.event_name == 'release' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: target/fish-common-api-${{ steps.version.outputs.new_version }}.jar
+          asset_name: fish-common-api-${{ steps.version.outputs.new_version }}.jar
+          asset_content_type: application/java-archive
+
+      - name: Upload Source JAR
+        uses: actions/upload-release-asset@v2
+        if: ${{ github.event_name == 'release' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: target/fish-common-api-${{ steps.version.outputs.new_version }}-sources.jar
+          asset_name: fish-common-api-${{ steps.version.outputs.new_version }}-sources.jar
+          asset_content_type: application/java-archive
+
+      - name: Upload Javadoc JAR
+        uses: actions/upload-release-asset@v2
+        if: ${{ github.event_name == 'release' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: target/fish-common-api-${{ steps.version.outputs.new_version }}-javadoc.jar
+          asset_name: fish-common-api-${{ steps.version.outputs.new_version }}-javadoc.jar
+          asset_content_type: application/java-archive
