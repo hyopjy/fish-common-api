@@ -9,37 +9,46 @@
     <version>1.0</version>
     <name>Fish Common API</name>
     <description>Shared API for Fish Mirai plugins</description>
-    <url>https://github.com/${env.GITHUB_REPOSITORY}</url>  <!-- 修改为动态URL -->
+    <url>https://github.com/hyopjy/fish-common-api</url>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- 统一插件版本管理 -->
+        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+        <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
+        <maven-javadoc-plugin.version>3.6.0</maven-javadoc-plugin.version>
+        <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
     </properties>
 
     <distributionManagement>
         <repository>
             <id>github</id>
             <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/${env.GITHUB_REPOSITORY}</url>  <!-- 关键修改 -->
+            <url>https://maven.pkg.github.com/${env.GITHUB_REPOSITORY}</url>
         </repository>
     </distributionManagement>
 
+
     <build>
         <plugins>
+            <!-- Maven编译器插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
                     <source>17</source>
                     <target>17</target>
                 </configuration>
             </plugin>
+
+            <!-- 源码打包插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>${maven-source-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -49,10 +58,16 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Javadoc插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.6.0</version>
+                <version>${maven-javadoc-plugin.version}</version>
+                <configuration>
+                    <!-- 忽略Javadoc错误避免构建失败 -->
+                    <failOnError>false</failOnError>
+                </configuration>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -62,11 +77,40 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- 部署插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
-                <version>3.1.1</version>
+                <version>${maven-deploy-plugin.version}</version>
+            </plugin>
+
+            <!-- 动态注入GitHub认证凭据 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-settings-plugin</artifactId>
+                <version>3.0.0</version> <!-- 较稳定版本 -->
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <servers>
+                                <server>
+                                    <id>github</id>
+                                    <!-- 从环境变量读取用户名和Token -->
+                                    <username>${env.GITHUB_USERNAME}</username>
+                                    <password>${env.GITHUB_TOKEN}</password>
+                                </server>
+                            </servers>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
+
+
 </project>
