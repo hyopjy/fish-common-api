@@ -26,15 +26,6 @@ jobs:
         cache: 'maven'
         server-id: github
         
-    - name: Install Maven
-      run: sudo apt-get install -y maven
-      
-    - name: Read project version
-      id: version
-      run: |
-        VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        
     - name: Build and Publish
       run: mvn -B clean deploy -DskipTests
       env:
@@ -56,17 +47,17 @@ jobs:
         }
         
         dependencies {
-            implementation 'com.fish:fish-common-api:${{ steps.version.outputs.version }}'
+            implementation 'com.fish:fish-common-api:${{ needs.setup.outputs.version }}'
         }" >> $GITHUB_ENV
         
     - name: Create Release
       if: ${{ github.event_name == 'release' }}
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: v${{ steps.version.outputs.version }}
-        name: Fish Common API v${{ steps.version.outputs.version }}
+        tag_name: v${{ needs.setup.outputs.version }}
+        name: Fish Common API v${{ needs.setup.outputs.version }}
         body: |
-          ### 🐟 Fish Common API v${{ steps.version.outputs.version }}
+          ### 🐟 Fish Common API v${{ needs.setup.outputs.version }}
           
           This release contains the shared API for Fish plugins.
           
@@ -75,7 +66,7 @@ jobs:
           <dependency>
             <groupId>com.fish</groupId>
             <artifactId>fish-common-api</artifactId>
-            <version>${{ steps.version.outputs.version }}</version>
+            <version>${{ needs.setup.outputs.version }}</version>
           </dependency>
           ```
           
