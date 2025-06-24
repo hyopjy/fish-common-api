@@ -2,10 +2,10 @@ name: Publish Fish Common API to GitHub Packages
 
 on:
   push:
-    branches: [ main ]  # 在 main 分支推送时触发
+    branches: [ main ]
   release:
-    types: [ created ]  # 创建新 release 时触发
-  workflow_dispatch:    # 允许手动触发
+    types: [ created ]
+  workflow_dispatch:
 
 jobs:
   build-and-publish:
@@ -42,6 +42,7 @@ jobs:
       run: mvn -B clean deploy -DskipTests
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_REPOSITORY: ${{ github.repository }}  # 传递仓库信息
         
     - name: Generate Gradle Usage Snippet
       run: |
