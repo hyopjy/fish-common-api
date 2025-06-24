@@ -24,8 +24,6 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         server-id: github
-        server-username: hyopjy
-        server-password: 
         
     - name: Cache Maven packages
       uses: actions/cache@v3
@@ -48,3 +46,51 @@ jobs:
     - name: Generate Gradle Usage Snippet
       run: |
         echo "GRADLE_USAGE=$(cat <<EOF
+repositories {
+    maven {
+        name = 'GitHubPackages'
+        url = 'https://maven.pkg.github.com/${{ github.repository }}'
+        credentials {
+            username = project.findProperty('gpr.user') ?: System.getenv('GPR_USER')
+            password = project.findProperty('gpr.key') ?: System.getenv('GPR_API_KEY')
+        }
+    }
+}
+
+dependencies {
+    implementation 'com.fish:fish-common-api:${{ steps.version.outputs.version }}'
+}
+EOF
+)" >> $GITHUB_ENV
+        
+    - name: Create Release
+      if: ${{ github.event_name == 'release' }}
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ steps.version.outputs.version }}
+        name: Fish Common API v${{ steps.version.outputs.version }}
+        body: |
+          ### 🐟 Fish Common API v${{ steps.version.outputs.version }}
+          
+          This release contains the shared API for Fish plugins.
+          
+          ### 📦 Maven
+          ```xml
+          <dependency>
+            <groupId>com.fish</groupId>
+            <artifactId>fish-common-api</artifactId>
+            <version>${{ steps.version.outputs.version }}</version>
+          </dependency>
+          ```
+          
+          ### 🐘 Gradle
+          ```gradle
+          ${{ env.GRADLE_USAGE }}
+          ```
+          
+          ### 🔑 Authentication
+          Add to `~/.gradle/gradle.properties`:
+          ```
+          gpr.user=<your-github-username>
+          gpr.key=<your-github-token>
+          ```
