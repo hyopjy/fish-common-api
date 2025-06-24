@@ -23,15 +23,9 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
+        cache: 'maven'
         server-id: github
         
-    - name: Cache Maven packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-        restore-keys: ${{ runner.os }}-m2-
-    
     - name: Read project version
       id: version
       run: |
@@ -42,7 +36,7 @@ jobs:
       run: mvn -B clean deploy -DskipTests
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_REPOSITORY: ${{ github.repository }}  # 传递仓库信息
+        GITHUB_REPOSITORY: ${{ github.repository }}
         
     - name: Generate Gradle Usage Snippet
       run: |
