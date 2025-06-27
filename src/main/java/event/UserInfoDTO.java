@@ -4,18 +4,11 @@ import java.util.List;
 
 public class UserInfoDTO {
 
-    String action;
-
     Long groupId;
 
     List<Long> userIds;
 
     String propCode;
-
-
-    public void setAction(String action) {
-        this.action = action;
-    }
 
     public Long getGroupId() {
         return groupId;
@@ -39,10 +32,5 @@ public class UserInfoDTO {
 
     public void setPropCode(String propCode) {
         this.propCode = propCode;
-    }
-
-
-    public String getAction() {
-        return action;
     }
 }
