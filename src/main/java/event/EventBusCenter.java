@@ -22,8 +22,8 @@ public class EventBusCenter {
         eventBus.unregister(obj);
     }
 
-    public static void post(Object obj) {
-        eventBus.post(obj);
+    public static void post(UserWinEvent event) {
+        eventBus.post(event);
     }
 
 
